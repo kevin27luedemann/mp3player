@@ -94,6 +94,14 @@ mixer       = audiomixer.Mixer( voice_count=1,
                                 samples_signed=True)
 mixer.voice[0].level    = 0.1
 audio.play(mixer)
+audio.pause()
+
+player  = label.Label(terminalio.FONT,
+                        text=files[0][:-4],
+                        color=0xFFFFFF,
+                        x=8, y=48,scale=1)
+disp.append(player)
+disp[1].text = "Pause"
 
 mixer.voice[0].play(decoder,loop=True)
 
@@ -103,11 +111,9 @@ while True:
     if key_event != None:
         if key_event.key_number == 0 and key_event.released:
             if audio.playing and not(audio.paused):
-                print("Pause")
                 disp[1].text = "Pause"
                 audio.pause()
             else:
-                print("Resume")
                 disp[1].text = "Playing"
                 time.sleep(0.1)
                 audio.resume()
@@ -121,8 +127,9 @@ while True:
             mp3file     = open(files[counter],"rb")
             decoder     = audiomp3.MP3Decoder(mp3file)
             mixer.voice[0].play(decoder,loop=True)
-            #print(files[counter])
+            player.text = files[counter][:-4]
             audio.resume()
+            disp[1].text = "Playing"
     if time.monotonic() >= last + 60.0 and (audio.paused or not(audio.playing)):
         last        = time.monotonic()
         now = r.datetime
@@ -132,3 +139,4 @@ while True:
                                                                 now.tm_hour,
                                                                 now.tm_min)
         disp[0].text  = text1
+    time.sleep(0.005)
