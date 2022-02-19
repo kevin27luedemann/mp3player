@@ -40,13 +40,12 @@ ds3231      = adafruit_ds3231.DS3231(i2c)
 r           = rtc.RTC()
 r.datetime = ds3231.datetime
 
-
 #Init SD card
 spi     = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
 cs_SD   = digitalio.DigitalInOut(board.D25)
 sdcard  = adafruit_sdcard.SDCard(spi, cs_SD)
 vfs     = storage.VfsFat(sdcard)
-storage.mount(vfs, "/sd")
+#storage.mount(vfs, "/sd")
 
 # Init Display
 WIDTH = 128
@@ -61,23 +60,22 @@ display = adafruit_displayio_sh1107.SH1107( disp_bus,
 display.brightness  = 0.1
 
 # Make the display context
-splash = displayio.Group()
-display.show(splash)
-
-color_palette = displayio.Palette(1)
-color_palette[0] = 0xFFFFFF  # White
-
 now = r.datetime
+disp        = displayio.Group()
+header      = "{:02d}.{:02d}.{} {:02d}:{:02d}".format(  now.tm_mday,
+                                                        now.tm_mon,
+                                                        now.tm_year,
+                                                        now.tm_hour,
+                                                        now.tm_min)
+header_area = label.Label(terminalio.FONT, text=header, color=0xFFFFFF, x=8, y=8)
+disp.append(header_area)
 
-# Draw some label text
-text1       = "{:02d}.{:02d}.{}".format(now.tm_mday,now.tm_mon,now.tm_year)
-text_area   = label.Label(terminalio.FONT, text=text1, color=0xFFFFFF, x=8, y=8)
-splash.append(text_area)
-text2 = "{:02d}:{:02d}:{:02d}".format(now.tm_hour,now.tm_min,now.tm_sec)
-text_area2 = label.Label(
-    terminalio.FONT, text=text2, scale=2, color=0xFFFFFF, x=9, y=44
-)
-splash.append(text_area2)
+progress  = label.Label(terminalio.FONT,
+                        text="Playing",
+                        color=0xFFFFFF,
+                        x=8, y=24,scale=2)
+disp.append(progress)
+display.show(disp)
 
 #Init and play sound
 audio       = audiobusio.I2SOut(board.D11, board.D12, board.D13)
@@ -102,22 +100,20 @@ while True:
     if key_event != None:
         if key_event.key_number == 0 and key_event.released:
             if audio.playing and not(audio.paused):
-            #if aplaying:
                 print("Pause")
-                aplaying = False
+                disp[1].text = "Pause"
                 audio.pause()
             else:
                 print("Resume")
-                aplaying = True
+                disp[1].text = "Playing"
+                time.sleep(0.1)
                 audio.resume()
-    if time.monotonic() >= last + 1.0:
-        now = r.datetime
-        #text1       = "{:02d}.{:02d}.{}".format(now.tm_mday,now.tm_mon,now.tm_year)
-        #text_area   = label.Label(terminalio.FONT, text=text1, color=0xFFFFFF, x=8, y=8)
-        #splash[0]   = text_area
-        #text2 = "{:02d}:{:02d}:{:02d}".format(now.tm_hour,now.tm_min,now.tm_sec)
-        #text_area2 = label.Label(
-        #    terminalio.FONT, text=text2, scale=2, color=0xFFFFFF, x=9, y=44
-        #)
-        #splash[1]   = text_area2
+    if time.monotonic() >= last + 60.0 and (audio.paused or not(audio.playing)):
         last        = time.monotonic()
+        now = r.datetime
+        text1       = "{:02d}.{:02d}.{} {:02d}:{:02d}".format(  now.tm_mday,
+                                                                now.tm_mon,
+                                                                now.tm_year,
+                                                                now.tm_hour,
+                                                                now.tm_min)
+        disp[0].text  = text1
