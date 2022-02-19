@@ -33,7 +33,7 @@ r.datetime = ds3231.datetime
 #Init SD card
 spi     = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
 spi.try_lock()
-spi.configure(baudrate=1000000)
+spi.configure(baudrate=5000000)
 spi.unlock()
 #print(spi.frequency)
 cs_SD   = digitalio.DigitalInOut(board.D25)
@@ -76,16 +76,16 @@ audio       = audiobusio.I2SOut(board.D11, board.D12, board.D13)
 
 os.chdir("/sd/p1")
 files       = os.listdir()
-print(files)
+#print(files)
 counter     = 0
 maxcounter  = len(files)-1
 mp3file     = open(files[counter],"rb")
 #mp3file     = open("Never_again.mp3","rb")
 #mp3file     = open("begins.mp3","rb")
 decoder     = audiomp3.MP3Decoder(mp3file)
-print(decoder.sample_rate)
-print(decoder.channel_count)
-print(decoder.bits_per_sample)
+#print(decoder.sample_rate)
+#print(decoder.channel_count)
+#print(decoder.bits_per_sample)
 
 mixer       = audiomixer.Mixer( voice_count=1,
                                 sample_rate=decoder.sample_rate,
