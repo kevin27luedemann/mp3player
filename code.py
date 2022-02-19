@@ -15,19 +15,9 @@ import audiomp3
 import audiomixer
 import rtc
 import keypad
+import os
 
 displayio.release_displays()
-#Init buttons
-#A           = digitalio.DigitalInOut(board.D9)
-#A.direction = digitalio.Direction.INPUT
-#A.pull      = digitalio.Pull.UP
-#B           = digitalio.DigitalInOut(board.D6)
-#B.direction = digitalio.Direction.INPUT
-#B.pull      = digitalio.Pull.UP
-#C           = digitalio.DigitalInOut(board.D5)
-#C.direction = digitalio.Direction.INPUT
-#C.pull      = digitalio.Pull.UP
-
 keys        = keypad.Keys(  (board.D9,board.D6,board.D5),
                             value_when_pressed=False,
                             pull=True,
@@ -42,10 +32,14 @@ r.datetime = ds3231.datetime
 
 #Init SD card
 spi     = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
+spi.try_lock()
+spi.configure(baudrate=1000000)
+spi.unlock()
+#print(spi.frequency)
 cs_SD   = digitalio.DigitalInOut(board.D25)
 sdcard  = adafruit_sdcard.SDCard(spi, cs_SD)
 vfs     = storage.VfsFat(sdcard)
-#storage.mount(vfs, "/sd")
+storage.mount(vfs, "/sd")
 
 # Init Display
 WIDTH = 128
@@ -79,14 +73,23 @@ display.show(disp)
 
 #Init and play sound
 audio       = audiobusio.I2SOut(board.D11, board.D12, board.D13)
-wave_file   = open("StreetChicken.wav", "rb")
-wave        = audiocore.WaveFile(wave_file)
-mp3file     = open("begins.mp3","rb")
+
+os.chdir("/sd/p1")
+files       = os.listdir()
+print(files)
+counter     = 0
+maxcounter  = len(files)-1
+mp3file     = open(files[counter],"rb")
+#mp3file     = open("Never_again.mp3","rb")
+#mp3file     = open("begins.mp3","rb")
 decoder     = audiomp3.MP3Decoder(mp3file)
+print(decoder.sample_rate)
+print(decoder.channel_count)
+print(decoder.bits_per_sample)
 
 mixer       = audiomixer.Mixer( voice_count=1,
                                 sample_rate=decoder.sample_rate,
-                                channel_count=1,
+                                channel_count=decoder.channel_count,
                                 bits_per_sample=decoder.bits_per_sample,
                                 samples_signed=True)
 mixer.voice[0].level    = 0.1
@@ -108,6 +111,18 @@ while True:
                 disp[1].text = "Playing"
                 time.sleep(0.1)
                 audio.resume()
+        elif key_event.key_number == 1 and key_event.released:
+            if audio.playing and not(audio.paused):
+                audio.pause()
+            counter += 1
+            if counter >maxcounter:
+                counter = 0
+            mp3file.close()
+            mp3file     = open(files[counter],"rb")
+            decoder     = audiomp3.MP3Decoder(mp3file)
+            mixer.voice[0].play(decoder,loop=True)
+            #print(files[counter])
+            audio.resume()
     if time.monotonic() >= last + 60.0 and (audio.paused or not(audio.playing)):
         last        = time.monotonic()
         now = r.datetime
