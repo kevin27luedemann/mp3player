@@ -76,16 +76,18 @@ audio       = audiobusio.I2SOut(board.D11, board.D12, board.D13)
 
 os.chdir("/sd/p1")
 files       = os.listdir()
-#print(files)
+print(files)
 counter     = 0
 maxcounter  = len(files)-1
-mp3file     = open(files[counter],"rb")
-#mp3file     = open("Never_again.mp3","rb")
-#mp3file     = open("begins.mp3","rb")
-decoder     = audiomp3.MP3Decoder(mp3file)
-#print(decoder.sample_rate)
-#print(decoder.channel_count)
-#print(decoder.bits_per_sample)
+fi          = open(files[counter],"rb")
+print(files[counter])
+#if files[counter][-3:] == "mp3":
+#    decoder     = audiomp3.MP3Decoder(fi)
+#elif files[counter][-3:] == "wav":
+decoder     = audiocore.WaveFile(fi)
+print(decoder.sample_rate)
+print(decoder.channel_count)
+print(decoder.bits_per_sample)
 
 mixer       = audiomixer.Mixer( voice_count=1,
                                 sample_rate=decoder.sample_rate,
@@ -123,9 +125,12 @@ while True:
             counter += 1
             if counter >maxcounter:
                 counter = 0
-            mp3file.close()
-            mp3file     = open(files[counter],"rb")
-            decoder     = audiomp3.MP3Decoder(mp3file)
+            fi.close()
+            fi          = open(files[counter],"rb")
+            if files[counter][-3:] == "mp3":
+                decoder     = audiomp3.MP3Decoder(fi)
+            elif files[counter][-3:] == "wav":
+                decoder     = audiocore.WaveFile(fi)
             mixer.voice[0].play(decoder,loop=True)
             player.text = files[counter][:-4]
             audio.resume()
