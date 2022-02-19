@@ -76,15 +76,13 @@ audio       = audiobusio.I2SOut(board.D11, board.D12, board.D13)
 
 os.chdir("/sd/p1")
 files       = os.listdir()
-print(files)
 counter     = 0
 maxcounter  = len(files)-1
 fi          = open(files[counter],"rb")
-print(files[counter])
-#if files[counter][-3:] == "mp3":
-#    decoder     = audiomp3.MP3Decoder(fi)
-#elif files[counter][-3:] == "wav":
-decoder     = audiocore.WaveFile(fi)
+if files[counter][-3:] == "mp3":
+    decoder     = audiomp3.MP3Decoder(fi)
+elif files[counter][-3:] == "wav":
+    decoder     = audiocore.WaveFile(fi)
 print(decoder.sample_rate)
 print(decoder.channel_count)
 print(decoder.bits_per_sample)
