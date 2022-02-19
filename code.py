@@ -1,21 +1,43 @@
 import time
 import board
 import busio
+import digitalio
 import displayio
 import terminalio
 from adafruit_display_text import label
 import adafruit_displayio_sh1107
 import adafruit_ds3231
+import adafruit_sdcard
+import storage
+import audiobusio
+import audiocore
+import audiomp3
 
 displayio.release_displays()
-# oled_reset = board.D9
+#Init buttons
+A           = digitalio.DigitalInOut(board.D9)
+A.direction = digitalio.Direction.INPUT
+A.pull      = digitalio.Pull.UP
+B           = digitalio.DigitalInOut(board.D6)
+B.direction = digitalio.Direction.INPUT
+B.pull      = digitalio.Pull.UP
+C           = digitalio.DigitalInOut(board.D5)
+C.direction = digitalio.Direction.INPUT
+C.pull      = digitalio.Pull.UP
 
-# Use for I2C
+#Init I2C devices
 i2c         = busio.I2C(board.SCL,board.SDA,frequency=400000)
 disp_bus    = displayio.I2CDisplay(i2c, device_address=0x3C)
 rtc         = adafruit_ds3231.DS3231(i2c)
 
-# SH1107 is vertically oriented 64x128
+#Init SD card
+spi     = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
+cs_SD   = digitalio.DigitalInOut(board.D25)
+sdcard  = adafruit_sdcard.SDCard(spi, cs_SD)
+vfs     = storage.VfsFat(sdcard)
+storage.mount(vfs, "/sd")
+
+# Init Display
 WIDTH = 128
 HEIGHT = 64
 BORDER = 1
@@ -24,6 +46,8 @@ display = adafruit_displayio_sh1107.SH1107( disp_bus,
                                             width=WIDTH,
                                             height=HEIGHT,
                                             rotation=0)
+
+display.brightness  = 0.1
 
 # Make the display context
 splash = displayio.Group()
@@ -44,8 +68,21 @@ text_area2 = label.Label(
 )
 splash.append(text_area2)
 
+#Init and play sound
+wave_file   = open("StreetChicken.wav", "rb")
+wave        = audiocore.WaveFile(wave_file)
+audio       = audiobusio.I2SOut(board.D11, board.D12, board.D13)
+
+mp3file     = open("begins.mp3","rb")
+decoder = audiomp3.MP3Decoder(mp3file)
+
+
+#audio.play(wave)
+#audio.play(decoder)
+#while audio.playing:
+#    pass
+
 last    = time.monotonic()
-display.brightness  = 0.1
 while True:
     if time.monotonic() >= last + 1.0:
         now = rtc.datetime
